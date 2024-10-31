@@ -7,6 +7,7 @@ import ee.bjarn.ktify.model.auth.Scope
 import ee.bjarn.ktify.model.player.CurrentPlayingTrack
 import ee.bjarn.ktify.tracks.getTrack
 import ee.bjarn.plattenspieler.config.Config
+import ee.bjarn.plattenspieler.database.Record
 import ee.bjarn.plattenspieler.database.Repositories
 import ee.bjarn.plattenspieler.database.User
 import org.litote.kmongo.Id
@@ -50,7 +51,7 @@ object SpotifyController {
         val user = Repositories.users.findOne(User::id eq id)
         val ktify = getKtify(id) ?: return false
 
-        val track = Repositories.records.findOneById(recordId ?: return false)?.trackId ?: return false
+        val track = Repositories.records.findOne(Record::chipId eq recordId)?.trackId ?: return false
         var success = true
         success = success && ktify.player.addItemToQueue(ktify.getTrack(track), null).value < 300
         success = success && ktify.player.skipToNextTrack().value < 300

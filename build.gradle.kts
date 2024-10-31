@@ -32,7 +32,6 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
 
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.2")
-    implementation("org.slf4j", "slf4j-simple", "2.0.7")
     implementation("org.litote.kmongo", "kmongo-coroutine-serialization", "4.10.0")
     implementation("at.favre.lib", "bcrypt", "0.10.2")
     implementation("ee.bjarn", "ktify", "0.1.3")

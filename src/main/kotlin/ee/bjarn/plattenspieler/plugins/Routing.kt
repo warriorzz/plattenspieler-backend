@@ -125,13 +125,13 @@ fun Application.configureRouting() {
                         ) ?: return@post
                         val track = SpotifyController.getTrack(user, request.track) ?: return@post
 
-                        val found = Repositories.records.findOneById(StringId<String>(request.id.toString()))
+                        val found = Repositories.records.findOne(Record::chipId eq request.id)
                         if (found != null) {
                             call.respond(HttpStatusCode.Conflict)
                             return@post
                         }
 
-                        val record = Record(StringId(request.id.toString()), track.id, track.album?.images[0]?.url)
+                        val record = Record(request.id, track.id, track.album?.images[0]?.url)
                         Repositories.records.insertOne(record)
                         call.respond(HttpStatusCode.Accepted)
                     }
