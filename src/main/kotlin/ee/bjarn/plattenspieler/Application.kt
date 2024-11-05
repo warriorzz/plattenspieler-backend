@@ -1,11 +1,13 @@
 package ee.bjarn.plattenspieler
 
 import ee.bjarn.plattenspieler.plugins.*
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
@@ -25,6 +27,14 @@ fun Application.module() {
         timeout = Duration.parse("15s")
         maxFrameSize = Long.MAX_VALUE
         masking = false
+    }
+    install(CORS) {
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+
+        allowCredentials = true
+
+        anyHost()
     }
     configureSecurity()
     configureRouting()
