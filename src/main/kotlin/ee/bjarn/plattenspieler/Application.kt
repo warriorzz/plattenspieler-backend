@@ -8,6 +8,7 @@ import io.ktor.server.cio.*
 import io.ktor.server.engine.*
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.routing.IgnoreTrailingSlash
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.timeout
@@ -36,6 +37,7 @@ fun Application.module() {
 
         anyHost()
     }
+    install(IgnoreTrailingSlash)
     configureSecurity()
     configureRouting()
 }
