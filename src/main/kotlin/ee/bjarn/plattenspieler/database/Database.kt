@@ -7,6 +7,7 @@ import org.litote.kmongo.Id
 import org.litote.kmongo.coroutine.coroutine
 import org.litote.kmongo.newId
 import org.litote.kmongo.reactivestreams.KMongo
+import java.util.UUID
 
 object Repositories {
     private val client = KMongo.createClient(Config.MONGO_CONNECTION_STRING).coroutine
@@ -20,11 +21,11 @@ object Repositories {
 data class Record(val chipId: Long, val trackId: String, val image: String? = null)
 
 @Serializable
-data class Plattenspieler(val id: Id<Plattenspieler>, val secret: String, val user: Id<User>)
+data class Plattenspieler(val pid: String, val secret: String, val user: String)
 
 @Serializable
 data class User(
-    val id: Id<User> = newId(),
+    val userid: String = UUID.randomUUID().toString(),
     val name: String,
     val password: ByteArray,
     val picture: String? = null,

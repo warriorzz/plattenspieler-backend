@@ -24,6 +24,7 @@ import org.litote.kmongo.eq
 import org.litote.kmongo.id.StringId
 import org.litote.kmongo.newId
 import java.util.Date
+import java.util.UUID
 
 fun Application.configureRouting() {
 
@@ -151,7 +152,7 @@ fun Application.configureRouting() {
 
                         val user = Repositories.users.findOne(User::name eq principal.getClaim("user", String::class))
                             ?: return@post
-                        val plattenspieler = Plattenspieler(newId(), request.auth, user.id)
+                        val plattenspieler = Plattenspieler(UUID.randomUUID().toString(), request.auth, user.userid)
                         Repositories.plattenspieler.insertOne(plattenspieler)
                         call.respond(HttpStatusCode.Accepted)
                     }

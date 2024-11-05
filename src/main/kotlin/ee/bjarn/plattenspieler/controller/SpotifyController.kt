@@ -10,7 +10,6 @@ import ee.bjarn.plattenspieler.config.Config
 import ee.bjarn.plattenspieler.database.Record
 import ee.bjarn.plattenspieler.database.Repositories
 import ee.bjarn.plattenspieler.database.User
-import org.litote.kmongo.Id
 import org.litote.kmongo.eq
 
 object SpotifyController {
@@ -47,8 +46,8 @@ object SpotifyController {
         return ktify.getTrack(trackId)
     }
 
-    suspend fun playTrack(id: Id<User>, recordId: Long?): Boolean {
-        val user = Repositories.users.findOne(User::id eq id)
+    suspend fun playTrack(id: String, recordId: Long?): Boolean {
+        val user = Repositories.users.findOne(User::userid eq id)
         val ktify = getKtify(id) ?: return false
 
         val track = Repositories.records.findOne(Record::chipId eq recordId)?.trackId ?: return false
@@ -59,18 +58,18 @@ object SpotifyController {
         return success
     }
 
-    suspend fun pausePlayback(id: Id<User>): Boolean {
+    suspend fun pausePlayback(id: String): Boolean {
         val ktify = getKtify(id) ?: return false
         return ktify.player.pausePlayback().value < 300
     }
 
-    suspend fun getCurrentPlayback(id: Id<User>): CurrentPlayingTrack? {
+    suspend fun getCurrentPlayback(id: String): CurrentPlayingTrack? {
         val ktify = getKtify(id) ?: return null
         return ktify.player.getCurrentPlayingTrack()
     }
 
-    private suspend fun getKtify(id: Id<User>): Ktify? {
-        val user = Repositories.users.findOne(User::id eq id)
+    private suspend fun getKtify(id: String): Ktify? {
+        val user = Repositories.users.findOne(User::userid eq id)
         return getKtify(user)
     }
 

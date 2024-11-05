@@ -12,7 +12,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.response.respondText
 import org.litote.kmongo.eq
-import org.litote.kmongo.newId
+import java.util.UUID
 
 fun Application.configureSecurity() {
     val jwtAudience = Config.JWT_AUDIENCE
@@ -68,7 +68,7 @@ object PasswordManager {
         if (found != null) return false
 
         val user =
-                User(newId(), name, BCrypt.withDefaults().hash(SALT_ROUNDS, password.toCharArray()))
+                User(UUID.randomUUID().toString(), name, BCrypt.withDefaults().hash(SALT_ROUNDS, password.toCharArray()))
         return Repositories.users.insertOne(user).wasAcknowledged()
     }
 
