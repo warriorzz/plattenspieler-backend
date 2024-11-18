@@ -10,7 +10,6 @@ object Config {
     val JWT_AUDIENCE = get("JWT_AUDIENCE")
     val JWT_SECRET = get("JWT_SECRET")
     val JWT_REALM = get("JWT_REALM")
-    val JWT_DOMAIN = get("JWT_DOMAIN")
     val JWT_ISSUER = get("JWT_ISSUER")
     val SPOTIFY_CLIENT_ID = get("SPOTIFY_CLIENT_ID")
     val SPOTIFY_CLIENT_SECRET = get("SPOTIFY_CLIENT_SECRET")

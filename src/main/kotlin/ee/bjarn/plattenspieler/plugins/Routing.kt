@@ -49,7 +49,7 @@ fun Application.configureRouting() {
                     .withIssuer(Config.JWT_ISSUER)
                     .withClaim("user", user.name)
                     .withClaim("admin", user.isAdmin)
-                    .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 30))
+                    .withExpiresAt(Date(System.currentTimeMillis() + 10000 * 60 * 60 * 24 * 30))
                     .sign(Algorithm.HMAC256(Config.JWT_SECRET))
                 call.respondText(token)
             }

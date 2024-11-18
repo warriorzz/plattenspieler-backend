@@ -16,7 +16,7 @@ import java.util.UUID
 
 fun Application.configureSecurity() {
     val jwtAudience = Config.JWT_AUDIENCE
-    val jwtDomain = Config.JWT_DOMAIN
+    val jwtIssuer = Config.JWT_ISSUER
     val jwtRealm = Config.JWT_REALM
     val jwtSecret = Config.JWT_SECRET
     authentication {
@@ -25,7 +25,7 @@ fun Application.configureSecurity() {
             verifier(
                     JWT.require(Algorithm.HMAC256(jwtSecret))
                             .withAudience(jwtAudience)
-                            .withIssuer(jwtDomain)
+                            .withIssuer(jwtIssuer)
                             .build()
             )
             validate { credential ->
@@ -42,7 +42,7 @@ fun Application.configureSecurity() {
             verifier(
                     JWT.require(Algorithm.HMAC256(jwtSecret))
                             .withAudience(jwtAudience)
-                            .withIssuer(jwtDomain)
+                            .withIssuer(jwtIssuer)
                             .build()
             )
             validate { credential ->
