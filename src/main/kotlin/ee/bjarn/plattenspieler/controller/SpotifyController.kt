@@ -5,6 +5,7 @@ import ee.bjarn.ktify.KtifyBuilder
 import ee.bjarn.ktify.model.Track
 import ee.bjarn.ktify.model.auth.Scope
 import ee.bjarn.ktify.model.player.CurrentPlayingTrack
+import ee.bjarn.ktify.model.player.Device
 import ee.bjarn.ktify.tracks.getTrack
 import ee.bjarn.plattenspieler.config.Config
 import ee.bjarn.plattenspieler.database.Record
@@ -56,6 +57,11 @@ object SpotifyController {
         success = success && ktify.player.skipToNextTrack().value < 300
         success = success && ktify.player.startPlayback(user?.deviceId).value < 300
         return success
+    }
+
+    suspend fun getDevices(user: User): List<Device>? {
+        val ktify = getKtify(user) ?: return null
+        return ktify.player.getAvailableDevices().devices
     }
 
     suspend fun pausePlayback(id: String): Boolean {

@@ -21,8 +21,6 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.webSocket
 import kotlinx.serialization.Serializable
 import org.litote.kmongo.eq
-import org.litote.kmongo.id.StringId
-import org.litote.kmongo.newId
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Date
@@ -73,28 +71,25 @@ fun Application.configureRouting() {
                 }
             }
 
-            /*post("/refresh") {
-                val request = call.receive<RefreshRequest>()
-
-                // JWTCredential
-
-                val token = JWT.create()
-                    .withAudience(Config.JWT_AUDIENCE)
-                    .withIssuer(Config.JWT_ISSUER)
-                    .withClaim("user", request.token)
-                    .withClaim("admin", request)
-                    .withExpiresAt(Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24 * 30))
-                    .sign(Algorithm.HMAC256(Config.JWT_SECRET))
-                call.respondText(token)
-            }*/
-
             authenticate("jwt") {
                 route("/user") {
                     route("/account") {
                         get("/") {
                             val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
                             val user = Repositories.users.findOne(User::name eq name) ?: return@get
-                            call.respond(UserResponse(user.name, user.picture ?: "", user.ktify != null, user.isAdmin))
+                            call.respond(UserResponse(user.name, user.picture ?: "", user.ktify != null, user.isAdmin, user.deviceId ?: ""))
+                        }
+
+                        get("/devices") {
+                            val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
+                            val user = Repositories.users.findOne(User::name eq name) ?: return@get
+                            val devices = SpotifyController.getDevices(user)
+                            if (devices == null) {
+                                call.respond(HttpStatusCode.BadRequest)
+                                return@get
+                            }
+
+                            call.respond(DevicesResponse(devices.map { DeviceR(it.name, it.id, it.type) }))
                         }
 
                         post("/update") {
@@ -162,26 +157,28 @@ fun Application.configureRouting() {
             }
 
             authenticate("plattenspieler") {
-                post("/plattenspieler") {
-                    val update = call.receive<PlattenspielerUpdate>()
+                route("/plattenspieler") {
+                    post("") {
+                        val update = call.receive<PlattenspielerUpdate>()
 
-                    val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq update.auth)
-                    if (update.pause) {
-                        SpotifyController.pausePlayback(plattenspieler?.user ?: return@post)
-                    } else {
-                        SpotifyController.playTrack(plattenspieler?.user ?: return@post, update.id)
+                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq update.auth)
+                        if (update.pause) {
+                            SpotifyController.pausePlayback(plattenspieler?.user ?: return@post)
+                        } else {
+                            SpotifyController.playTrack(plattenspieler?.user ?: return@post, update.id)
+                        }
+                        Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
                     }
-                    Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
-                }
 
-                post("/update") {
-                    val request = call.receive<PlattenspielerRequestUpdate>()
-                    val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
+                    post("/update") {
+                        val request = call.receive<PlattenspielerRequestUpdate>()
+                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
 
-                    val text = Files.readString(Path.of(Config.PATH_TO_PLATTENSPIELER_SCRIPT), Charsets.UTF_8)
-                    call.respond(text)
+                        val text = Files.readString(Path.of(Config.PATH_TO_PLATTENSPIELER_SCRIPT), Charsets.UTF_8)
+                        call.respond(text)
 
-                    Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
+                        Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
+                    }
                 }
             }
 
@@ -220,7 +217,13 @@ data class PlattenspielerUpdate(val auth: String, val id: Long? = null, val paus
 data class PlattenspielerRequestUpdate(val auth: String)
 
 @Serializable
-data class UserResponse(val name: String, val picture: String, val spotify: Boolean, val admin: Boolean)
+data class DevicesResponse(val devices: List<DeviceR>)
+
+@Serializable
+data class DeviceR(val name: String, val id: String, val type: String)
+
+@Serializable
+data class UserResponse(val name: String, val picture: String, val spotify: Boolean, val admin: Boolean, val device: String)
 
 @Serializable
 data class CreateAccountRequest(val name: String, val password: String, val code: String)
