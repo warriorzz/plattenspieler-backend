@@ -23,6 +23,8 @@ import kotlinx.serialization.Serializable
 import org.litote.kmongo.eq
 import org.litote.kmongo.id.StringId
 import org.litote.kmongo.newId
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.Date
 import java.util.UUID
 
@@ -169,6 +171,17 @@ fun Application.configureRouting() {
                     } else {
                         SpotifyController.playTrack(plattenspieler?.user ?: return@post, update.id)
                     }
+                    Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
+                }
+
+                post("/update") {
+                    val request = call.receive<PlattenspielerRequestUpdate>()
+                    val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
+
+                    val text = Files.readString(Path.of(Config.PATH_TO_PLATTENSPIELER_SCRIPT), Charsets.UTF_8)
+                    call.respond(text)
+
+                    Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, Plattenspieler::lastActive eq System.currentTimeMillis())
                 }
             }
 
@@ -201,10 +214,10 @@ fun Application.configureRouting() {
 data class AuthenticationRequest(val user: String, val password: String)
 
 @Serializable
-data class RefreshRequest(val token: String)
+data class PlattenspielerUpdate(val auth: String, val id: Long? = null, val pause: Boolean = false)
 
 @Serializable
-data class PlattenspielerUpdate(val auth: String, val id: Long? = null, val pause: Boolean = false)
+data class PlattenspielerRequestUpdate(val auth: String)
 
 @Serializable
 data class UserResponse(val name: String, val picture: String, val spotify: Boolean, val admin: Boolean)

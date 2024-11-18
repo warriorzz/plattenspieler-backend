@@ -16,6 +16,7 @@ object Config {
     val SPOTIFY_REDIRECT_URI = get("SPOTIFY_REDIRECT_URI")
     val FRONTEND_REDIRECT_URL = get("FRONTEND_REDIRECT_URL")
     val STATIC_AUTH_SECRET = get("STATIC_AUTH_SECRET")
+    val PATH_TO_PLATTENSPIELER_SCRIPT = get("PATH_TO_PLATTENSPIELER_SCRIPT")
 
     private fun get(key: String): String {
         if (System.getProperty(key) != null) {

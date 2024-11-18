@@ -36,7 +36,7 @@ dependencies {
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.2")
     implementation("org.litote.kmongo", "kmongo-coroutine-serialization", "4.10.0")
     implementation("at.favre.lib", "bcrypt", "0.10.2")
-    implementation("ee.bjarn", "ktify", "0.1.3")
+    implementation("ee.bjarn", "ktify", "0.1.4")
 
     testImplementation("io.ktor:ktor-server-test-host-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
