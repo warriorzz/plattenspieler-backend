@@ -19,13 +19,13 @@ object SpotifyController {
         KtifyBuilder(Config.SPOTIFY_CLIENT_ID, Config.SPOTIFY_CLIENT_SECRET, Config.SPOTIFY_REDIRECT_URI)
 
     private val connecting = HashMap<String, Pair<KtifyBuilder, String>>()
+    private val createMap = HashMap<String, Track>()
 
     fun getAuthorizationURL(user: String): String {
-        val builder: KtifyBuilder;
-        if (connecting.contains(user)) {
-            builder = connecting.get(user)?.first ?: return ""
+        val builder: KtifyBuilder = if (connecting.contains(user)) {
+            connecting.get(user)?.first ?: return ""
         } else {
-            builder = KtifyBuilder(Config.SPOTIFY_CLIENT_ID, Config.SPOTIFY_CLIENT_SECRET, Config.SPOTIFY_REDIRECT_URI)
+            KtifyBuilder(Config.SPOTIFY_CLIENT_ID, Config.SPOTIFY_CLIENT_SECRET, Config.SPOTIFY_REDIRECT_URI)
         }
         val url = builder.getAuthorisationURL(listOf(Scope.USER_READ_PLAYBACK_STATE, Scope.USER_MODIFY_PLAYBACK_STATE, Scope.USER_READ_PRIVATE))
         val state = url.split("state=")[1].split("&")[0]
@@ -51,6 +51,19 @@ object SpotifyController {
         val user = Repositories.users.findOne(User::userid eq id)
         val ktify = getKtify(id) ?: return false
 
+        if (user != null && createMap.contains(user.userid) && recordId != null) {
+            val found = Repositories.records.findOne(Record::chipId eq recordId)
+            val track = createMap[user.userid]!!
+            val record = Record(recordId, track.id, track.album?.images[0]?.url)
+            if (found != null) {
+                Repositories.records.updateOne(Record::chipId eq recordId, record)
+            } else {
+                Repositories.records.insertOne(record)
+            }
+
+            createMap.remove(user.userid)
+        }
+
         val track = Repositories.records.findOne(Record::chipId eq recordId)?.trackId ?: return false
         var success = true
         success = success && ktify.player.addItemToQueue(ktify.getTrack(track), null).value < 300
@@ -67,6 +80,10 @@ object SpotifyController {
     suspend fun pausePlayback(id: String): Boolean {
         val ktify = getKtify(id) ?: return false
         return ktify.player.pausePlayback().value < 300
+    }
+
+    fun addCreate(user: User, track: Track) {
+        createMap[user.userid] = track
     }
 
     suspend fun getCurrentPlayback(id: String): CurrentPlayingTrack? {

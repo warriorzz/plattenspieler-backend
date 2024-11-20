@@ -17,6 +17,7 @@ object Config {
     val FRONTEND_REDIRECT_URL = get("FRONTEND_REDIRECT_URL")
     val STATIC_AUTH_SECRET = get("STATIC_AUTH_SECRET")
     val PATH_TO_PLATTENSPIELER_SCRIPT = get("PATH_TO_PLATTENSPIELER_SCRIPT")
+    val PLATTENSPIELER_SCRIPT_VERSION = get("PLATTENSPIELER_SCRIPT_VERSION")
 
     private fun get(key: String): String {
         if (System.getProperty(key) != null) {

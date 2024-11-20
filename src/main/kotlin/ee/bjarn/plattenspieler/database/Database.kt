@@ -21,7 +21,7 @@ object Repositories {
 data class Record(val chipId: Long, val trackId: String, val image: String? = null)
 
 @Serializable
-data class Plattenspieler(val pid: String, val secret: String, val user: String, val lastActive: Long = -1)
+data class Plattenspieler(val pid: String, val secret: String, val user: String, val lastActive: Long = -1, val ssid: String? = null, val password: String? = null)
 
 @Serializable
 data class User(
