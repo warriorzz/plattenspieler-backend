@@ -23,6 +23,6 @@ object Config {
         if (System.getProperty(key) != null) {
             return System.getProperty(key)
         }
-        return dotenv.get(key)
+        return dotenv.get(key) ?: ""
     }
 }
