@@ -42,7 +42,7 @@ fun Application.configureRouting() {
                 val token = JWT.create()
                     .withAudience(Config.JWT_AUDIENCE)
                     .withIssuer(Config.JWT_ISSUER)
-                    .withClaim("user", user.name)
+                    .withClaim("user", user.userid)
                     .withClaim("admin", user.isAdmin)
                     .withExpiresAt(Date(System.currentTimeMillis() + 100000 * 60 * 60 * 24 * 30))
                     .sign(Algorithm.HMAC256(Config.JWT_SECRET))
@@ -71,20 +71,29 @@ fun Application.configureRouting() {
                     route("/account") {
                         get("/") {
                             val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
-                            val user = Repositories.users.findOne(User::name eq name) ?: return@get
+                            val user = Repositories.users.findOne(User::userid eq name) ?: return@get
                             call.respond(UserResponse(user.name, user.picture ?: "", user.ktify != null, user.isAdmin, user.deviceId ?: ""))
                         }
 
                         get("/devices") {
                             val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
-                            val user = Repositories.users.findOne(User::name eq name) ?: return@get
+                            val user = Repositories.users.findOne(User::userid eq name) ?: return@get
                             val devices = SpotifyController.getDevices(user)
                             if (devices == null) {
                                 call.respond(HttpStatusCode.BadRequest)
                                 return@get
                             }
 
-                            call.respond(DevicesResponse(devices.map { DeviceR(it.name, it.id, it.type) }))
+                            call.respond(DevicesResponse(devices.map { DeviceR(it.name, it.id, it.type) }, user.deviceId ?: ""))
+                        }
+
+                        post("/device") {
+                            val name = call.principal<JWTPrincipal>()?.get("user") ?: return@post
+                            val user = Repositories.users.findOne(User::userid eq name) ?: return@post
+
+                            val request = call.receive<ChangeDeviceRequest>()
+                            Repositories.users.updateOne(User::userid eq user.userid, User::deviceId eq request.device)
+                            call.respond(HttpStatusCode.Accepted)
                         }
 
                         post("/update") {
@@ -114,7 +123,7 @@ fun Application.configureRouting() {
                         val request = call.receive<CreateRecordRequest>()
                         val principal = call.principal<JWTPrincipal>()
                         val user = Repositories.users.findOne(
-                            (User::name eq principal?.getClaim("user", String::class))
+                            (User::userid eq principal?.getClaim("user", String::class))
                         ) ?: return@post
                         val track = SpotifyController.getTrack(user, request.track) ?: return@post
 
@@ -126,14 +135,26 @@ fun Application.configureRouting() {
                         // modify record
                     }
 
-                    get("/information") {
+                    get("/info") {
                         // information about (multiple) plattenspieler
+                        val principal = call.principal<JWTPrincipal>() ?: return@get
+
+                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
+                            ?: return@get
+
+                        val plattenspieler = Repositories.plattenspieler.find(User::userid eq user.userid).toList()
+                        val id = call.queryParameters["id"]
+                        if (id == null) {
+                            call.respond(MultiplePlattenspielerResponse(plattenspieler.map { it -> SinglePlattenspielerResponse(it.pid, it.lastActive) }))
+                        } else {
+                            call.respond(plattenspieler.firstOrNull { it.pid == id }.let { if (it == null) SinglePlattenspielerResponse("", -1) else SinglePlattenspielerResponse(it.pid, it.lastActive) })
+                        }
                     }
 
                     post("/wifi") {
                         val principal = call.principal<JWTPrincipal>() ?: return@post
 
-                        val user = Repositories.users.findOne(User::name eq principal.getClaim("user", String::class))
+                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
                             ?: return@post
                         val request = call.receive<PlattenspielerWifiRequest>()
                         val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::pid eq request.pid) ?: return@post
@@ -152,7 +173,7 @@ fun Application.configureRouting() {
                         // register plattenspieler
                         val principal = call.principal<JWTPrincipal>() ?: return@post
 
-                        val user = Repositories.users.findOne(User::name eq principal.getClaim("user", String::class))
+                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
                             ?: return@post
 
                         val request = call.receive<RegisterPlattenspielerRequest>()
@@ -249,7 +270,7 @@ data class PlattenspielerAuthRequest(val auth: String)
 data class PlattenspielerWifiRequest(val ssid: String, val password: String, val pid: String)
 
 @Serializable
-data class DevicesResponse(val devices: List<DeviceR>)
+data class DevicesResponse(val devices: List<DeviceR>, val selected: String)
 
 @Serializable
 data class DeviceR(val name: String, val id: String, val type: String)
@@ -265,3 +286,12 @@ data class CreateRecordRequest(val track: String)
 
 @Serializable
 data class RegisterPlattenspielerRequest(val auth: String)
+
+@Serializable
+data class SinglePlattenspielerResponse(val id: String, val lastActive: Long)
+
+@Serializable
+data class MultiplePlattenspielerResponse(val plattenspieler: List<SinglePlattenspielerResponse>)
+
+@Serializable
+data class ChangeDeviceRequest(val device: String)
