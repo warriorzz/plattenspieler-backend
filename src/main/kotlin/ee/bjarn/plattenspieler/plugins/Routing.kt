@@ -157,7 +157,7 @@ fun Application.configureRouting() {
                         val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
                             ?: return@get
 
-                        val plattenspieler = Repositories.plattenspieler.find(User::userid eq user.userid).toList()
+                        val plattenspieler = Repositories.plattenspieler.find(Plattenspieler::user eq user.userid).toList()
                         val id = call.queryParameters["id"]
                         if (id == null) {
                             call.respond(MultiplePlattenspielerResponse(plattenspieler.map { it -> SinglePlattenspielerResponse(it.pid, it.lastActive) }))
