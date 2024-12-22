@@ -228,7 +228,11 @@ fun Application.configureRouting() {
                     post("/update") {
                         logger.info("Requested /plattenspieler/update")
                         val request = call.receive<PlattenspielerRequestUpdate>()
-                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
+                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth)
+                        if (plattenspieler == null) {
+                            call.respond(HttpStatusCode.NotFound)
+                            return@post
+                        }
 
                         if (request.version == Config.PLATTENSPIELER_SCRIPT_VERSION) {
                             call.respond("")

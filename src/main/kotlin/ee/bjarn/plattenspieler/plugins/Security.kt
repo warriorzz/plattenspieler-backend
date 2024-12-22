@@ -96,15 +96,19 @@ class StaticAuthSecretProvider internal constructor(config: Config) :
     }
 
     override suspend fun onAuthenticate(context: AuthenticationContext) {
-        val authString = context.call.parameters["auth"]
+        logger.info("Authenticating plattenspieler...")
+        val authString = context.call.request.headers["Authorization"]
 
         val cause: AuthenticationFailedCause? = if (authString == null) {
+            logger.info("No credentials provided.")
             AuthenticationFailedCause.Error("")
         } else {
             val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq authString)
             if (plattenspieler == null) {
+                logger.info("Not found.")
                 AuthenticationFailedCause.InvalidCredentials
             } else {
+                logger.info("Success.")
                 null
             }
         }
