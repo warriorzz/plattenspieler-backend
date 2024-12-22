@@ -35,11 +35,11 @@ object SpotifyController {
 
     suspend fun callbackConnect(code: String, state: String) {
         val entry = connecting.entries.firstOrNull { it.value.second == state } ?: return
-        val user = Repositories.users.findOne(User::name eq entry.key)
+        val user = Repositories.users.findOne(User::userid eq entry.key)
         if (user == null) return
         val ktify = entry.value.first.build(code)
         user.ktify = ktify.getClientCredentials()
-        Repositories.users.updateOne(User::name eq entry.key, user)
+        Repositories.users.updateOne(User::userid eq entry.key, user)
     }
 
     suspend fun getTrack(user: User, trackId: String): Track? {

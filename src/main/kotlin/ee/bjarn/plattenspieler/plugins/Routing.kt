@@ -278,6 +278,7 @@ fun Application.configureRouting() {
                     logger.info("Requested /callback/spotify")
                     val error = call.queryParameters["error"]
                     if (error != null) {
+                        logger.info("Error when authenticating with Spotify.")
                         call.respondText("Error: $error", status = HttpStatusCode.BadRequest)
                         return@get
                     }
