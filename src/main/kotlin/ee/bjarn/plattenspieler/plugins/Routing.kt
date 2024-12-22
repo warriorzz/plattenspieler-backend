@@ -201,6 +201,12 @@ fun Application.configureRouting() {
                             ?: return@post
 
                         val request = call.receive<RegisterPlattenspielerRequest>()
+                        val found = Repositories.plattenspieler.find(Plattenspieler::secret eq request.auth)
+                        if (found.first() != null) {
+                            call.respond(HttpStatusCode.Conflict)
+                            return@post
+                        }
+
                         val plattenspieler = Plattenspieler(UUID.randomUUID().toString(), request.auth, user.userid)
                         Repositories.plattenspieler.insertOne(plattenspieler)
                         call.respond(HttpStatusCode.Accepted)
@@ -223,6 +229,8 @@ fun Application.configureRouting() {
                         val updated = Plattenspieler(plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
                             System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password)
                         Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, updated)
+
+                        call.respond(HttpStatusCode.Accepted)
                     }
 
                     post("/update") {
@@ -240,7 +248,7 @@ fun Application.configureRouting() {
                         }
 
                         val text = Files.readString(Path.of(Config.PATH_TO_PLATTENSPIELER_SCRIPT), Charsets.UTF_8)
-                        call.respond(text)
+                        call.respond(Config.PLATTENSPIELER_SCRIPT_VERSION + "/=====/" + text)
 
                         val updated = Plattenspieler(plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
                             System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password)
