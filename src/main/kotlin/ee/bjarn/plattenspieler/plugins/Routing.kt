@@ -171,9 +171,16 @@ fun Application.configureRouting() {
                         val principal = call.principal<JWTPrincipal>() ?: return@post
 
                         val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                            ?: return@post
+                        if (user == null) {
+                            call.respond(HttpStatusCode.Forbidden)
+                            return@post
+                        }
                         val request = call.receive<PlattenspielerWifiRequest>()
-                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::pid eq request.pid) ?: return@post
+                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::pid eq request.pid)
+                        if (plattenspieler == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                            return@post
+                        }
 
                         if (plattenspieler.user != user.userid) {
                             call.respond(HttpStatusCode.Forbidden)
