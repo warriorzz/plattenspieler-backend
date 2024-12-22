@@ -99,7 +99,7 @@ fun Application.configureRouting() {
                             val user = Repositories.users.findOne(User::userid eq name) ?: return@post
 
                             val request = call.receive<ChangeDeviceRequest>()
-                            val updated = User(user.userid, user.name, user.password, user.picture, user.isAdmin, user.ktify, request.device)
+                            val updated = User(user.userid, user.name, user.password, user.picture, user.isAdmin, user.ktify, if (request.device == "") null else request.device)
                             Repositories.users.updateOne(User::userid eq user.userid, updated)
                             call.respond(HttpStatusCode.Accepted)
                         }
