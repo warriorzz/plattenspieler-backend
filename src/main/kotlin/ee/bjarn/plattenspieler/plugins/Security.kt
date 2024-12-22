@@ -7,6 +7,7 @@ import ee.bjarn.plattenspieler.config.Config
 import ee.bjarn.plattenspieler.database.Plattenspieler
 import ee.bjarn.plattenspieler.database.Repositories
 import ee.bjarn.plattenspieler.database.User
+import ee.bjarn.plattenspieler.logger
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -15,6 +16,8 @@ import org.litote.kmongo.eq
 import java.util.UUID
 
 fun Application.configureSecurity() {
+    logger.info("Configuring authentication...")
+
     val jwtAudience = Config.JWT_AUDIENCE
     val jwtIssuer = Config.JWT_ISSUER
     val jwtRealm = Config.JWT_REALM

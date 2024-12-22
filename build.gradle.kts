@@ -1,5 +1,4 @@
 val kotlin_version: String by project
-val logback_version: String by project
 
 plugins {
     kotlin("jvm") version "2.0.21"
@@ -31,7 +30,6 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jwt-jvm")
     implementation("io.ktor:ktor-server-cio-jvm")
     implementation("io.ktor:ktor-server-cors")
-    implementation("ch.qos.logback:logback-classic:$logback_version")
 
     implementation("io.github.cdimascio:dotenv-kotlin:6.4.2")
     implementation("org.litote.kmongo", "kmongo-coroutine-serialization", "4.10.0")
