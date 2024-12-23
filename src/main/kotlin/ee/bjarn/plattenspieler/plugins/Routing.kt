@@ -137,8 +137,16 @@ fun Application.configureRouting() {
                         val principal = call.principal<JWTPrincipal>()
                         val user = Repositories.users.findOne(
                             (User::userid eq principal?.getClaim("user", String::class))
-                        ) ?: return@post
-                        val track = SpotifyController.getTrack(user, request.track) ?: return@post
+                        )
+                        if (user == null) {
+                            call.respond(HttpStatusCode.Forbidden)
+                            return@post
+                        }
+                        val track = SpotifyController.getTrack(user, request.track)
+                        if (track == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                            return@post
+                        }
 
                         SpotifyController.addCreate(user, track)
                         call.respond(HttpStatusCode.Accepted)
@@ -155,7 +163,10 @@ fun Application.configureRouting() {
                         val principal = call.principal<JWTPrincipal>() ?: return@get
 
                         val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                            ?: return@get
+                        if (user == null) {
+                            call.respond(HttpStatusCode.Forbidden)
+                            return@get
+                        }
 
                         val plattenspieler = Repositories.plattenspieler.find(Plattenspieler::user eq user.userid).toList()
                         val id = call.queryParameters["id"]
@@ -198,7 +209,10 @@ fun Application.configureRouting() {
                         val principal = call.principal<JWTPrincipal>() ?: return@post
 
                         val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                            ?: return@post
+                        if (user == null) {
+                            call.respond(HttpStatusCode.Forbidden)
+                            return@post
+                        }
 
                         val request = call.receive<RegisterPlattenspielerRequest>()
                         val found = Repositories.plattenspieler.find(Plattenspieler::secret eq request.auth)
