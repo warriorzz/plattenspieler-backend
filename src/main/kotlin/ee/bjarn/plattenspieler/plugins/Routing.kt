@@ -294,24 +294,6 @@ fun Application.configureRouting() {
                         Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, updated)
                     }
 
-                    post("/ssid") {
-                        logger.info("Requested /plattenspieler/ssid")
-                        val request = call.receive<PlattenspielerAuthRequest>()
-                        val plattenspieler =
-                            Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
-
-                        call.respond(plattenspieler.ssid ?: "")
-                    }
-
-                    post("/password") {
-                        logger.info("Requested /plattenspieler/password")
-                        val request = call.receive<PlattenspielerAuthRequest>()
-                        val plattenspieler =
-                            Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
-
-                        call.respond(plattenspieler.password ?: "")
-                    }
-
                     post("/data") {
                         logger.info("Requested /plattenspieler/data")
                         val request = call.receive<PlattenspielerAuthRequest>()
