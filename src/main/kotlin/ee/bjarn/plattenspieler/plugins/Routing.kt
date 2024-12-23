@@ -75,51 +75,71 @@ fun Application.configureRouting() {
                     route("/account") {
                         get("/") {
                             logger.info("Requested /user/account/")
-                            val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
-                            val user = Repositories.users.findOne(User::userid eq name) ?: return@get
-                            call.respond(UserResponse(user.name, user.picture ?: "", user.ktify != null, user.isAdmin, user.deviceId ?: ""))
+                            val user = call.getUser() ?: return@get
+                            call.respond(
+                                UserResponse(
+                                    user.name,
+                                    user.picture ?: "",
+                                    user.ktify != null,
+                                    user.isAdmin,
+                                    user.deviceId ?: ""
+                                )
+                            )
                         }
 
                         get("/devices") {
                             logger.info("Requested /user/account/devices")
-                            val name = call.principal<JWTPrincipal>()?.get("user") ?: return@get
-                            val user = Repositories.users.findOne(User::userid eq name) ?: return@get
+                            val user = call.getUser() ?: return@get
                             val devices = SpotifyController.getDevices(user)
                             if (devices == null) {
                                 call.respond(HttpStatusCode.BadRequest)
                                 return@get
                             }
 
-                            call.respond(DevicesResponse(devices.map { DeviceR(it.name, it.id, it.type) }, user.deviceId ?: ""))
+                            call.respond(
+                                DevicesResponse(
+                                    devices.map { DeviceR(it.name, it.id, it.type) },
+                                    user.deviceId ?: ""
+                                )
+                            )
                         }
 
                         post("/device") {
                             logger.info("Requested /user/account/device")
-                            val name = call.principal<JWTPrincipal>()?.get("user") ?: return@post
-                            val user = Repositories.users.findOne(User::userid eq name) ?: return@post
+                            val user = call.getUser() ?: return@post
 
                             val request = call.receive<ChangeDeviceRequest>()
-                            val updated = User(user.userid, user.name, user.password, user.picture, user.isAdmin, user.ktify, if (request.device == "") null else request.device)
+                            val updated = User(
+                                user.userid,
+                                user.name,
+                                user.password,
+                                user.picture,
+                                user.isAdmin,
+                                user.ktify,
+                                if (request.device == "") null else request.device
+                            )
                             Repositories.users.updateOne(User::userid eq user.userid, updated)
                             call.respond(HttpStatusCode.Accepted)
                         }
 
                         post("/update") {
                             logger.info("Requested /user/account/update")
-                            // update information - name
+                            val user = call.getUser() ?: return@post
                         }
 
                         post("/password") {
                             logger.info("Requested /user/account/password")
-                            // update password
+                            val user = call.getUser() ?: return@post
                         }
 
                         post("/connect") {
                             logger.info("Requested /user/account/connect")
-                            val principal = call.principal<JWTPrincipal>() ?: return@post
-                            val url = SpotifyController.getAuthorizationURL(
-                                principal.getClaim("user", String::class) ?: return@post
-                            )
+                            val user = call.principal<JWTPrincipal>()?.getClaim("user", String::class)
+                            if (user == null) {
+                                call.respond(HttpStatusCode.Forbidden)
+                                return@post
+                            }
+                            val url = SpotifyController.getAuthorizationURL(user)
                             call.respondText(url)
                         }
                     }
@@ -133,15 +153,8 @@ fun Application.configureRouting() {
                     post("/create") {
                         logger.info("Requested /content/create")
                         // create record
+                        val user = call.getUser() ?: return@post
                         val request = call.receive<CreateRecordRequest>()
-                        val principal = call.principal<JWTPrincipal>()
-                        val user = Repositories.users.findOne(
-                            (User::userid eq principal?.getClaim("user", String::class))
-                        )
-                        if (user == null) {
-                            call.respond(HttpStatusCode.Forbidden)
-                            return@post
-                        }
                         val track = SpotifyController.getTrack(user, request.track)
                         if (track == null) {
                             call.respond(HttpStatusCode.BadRequest)
@@ -155,37 +168,37 @@ fun Application.configureRouting() {
                     post("/modify") {
                         logger.info("Requested /content/modify")
                         // modify record
+                        val user = call.getUser() ?: return@post
                     }
 
                     get("/info") {
                         logger.info("Requested /content/info")
                         // information about (multiple) plattenspieler
-                        val principal = call.principal<JWTPrincipal>() ?: return@get
+                        val user = call.getUser() ?: return@get
 
-                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                        if (user == null) {
-                            call.respond(HttpStatusCode.Forbidden)
-                            return@get
-                        }
-
-                        val plattenspieler = Repositories.plattenspieler.find(Plattenspieler::user eq user.userid).toList()
+                        val plattenspieler =
+                            Repositories.plattenspieler.find(Plattenspieler::user eq user.userid).toList()
                         val id = call.queryParameters["id"]
                         if (id == null) {
-                            call.respond(MultiplePlattenspielerResponse(plattenspieler.map { it -> SinglePlattenspielerResponse(it.pid, it.lastActive) }))
+                            call.respond(MultiplePlattenspielerResponse(plattenspieler.map { it ->
+                                SinglePlattenspielerResponse(
+                                    it.pid,
+                                    it.lastActive
+                                )
+                            }))
                         } else {
-                            call.respond(plattenspieler.firstOrNull { it.pid == id }.let { if (it == null) SinglePlattenspielerResponse("", -1) else SinglePlattenspielerResponse(it.pid, it.lastActive) })
+                            call.respond(plattenspieler.firstOrNull { it.pid == id }.let {
+                                if (it == null) SinglePlattenspielerResponse(
+                                    "",
+                                    -1
+                                ) else SinglePlattenspielerResponse(it.pid, it.lastActive)
+                            })
                         }
                     }
 
                     post("/wifi") {
                         logger.info("Requested /content/wifi")
-                        val principal = call.principal<JWTPrincipal>() ?: return@post
-
-                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                        if (user == null) {
-                            call.respond(HttpStatusCode.Forbidden)
-                            return@post
-                        }
+                        val user = call.getUser() ?: return@post
                         val request = call.receive<PlattenspielerWifiRequest>()
                         val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::pid eq request.pid)
                         if (plattenspieler == null) {
@@ -198,7 +211,14 @@ fun Application.configureRouting() {
                             return@post
                         }
 
-                        val updated = Plattenspieler(plattenspieler.pid, plattenspieler.secret, plattenspieler.user, plattenspieler.lastActive, request.ssid, request.password)
+                        val updated = Plattenspieler(
+                            plattenspieler.pid,
+                            plattenspieler.secret,
+                            plattenspieler.user,
+                            plattenspieler.lastActive,
+                            request.ssid,
+                            request.password
+                        )
                         Repositories.plattenspieler.updateOne(Plattenspieler::pid eq request.pid, updated)
                         call.respond(HttpStatusCode.Accepted)
                     }
@@ -206,13 +226,7 @@ fun Application.configureRouting() {
                     post("/register") {
                         logger.info("Requested /content/register")
                         // register plattenspieler
-                        val principal = call.principal<JWTPrincipal>() ?: return@post
-
-                        val user = Repositories.users.findOne(User::userid eq principal.getClaim("user", String::class))
-                        if (user == null) {
-                            call.respond(HttpStatusCode.Forbidden)
-                            return@post
-                        }
+                        val user = call.getUser() ?: return@post
 
                         val request = call.receive<RegisterPlattenspielerRequest>()
                         val found = Repositories.plattenspieler.find(Plattenspieler::secret eq request.auth)
@@ -235,13 +249,19 @@ fun Application.configureRouting() {
                         val update = call.receive<PlattenspielerUpdate>()
 
                         val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq update.auth)
-                        if (update.pause) {
-                            SpotifyController.pausePlayback(plattenspieler?.user ?: return@post)
-                        } else {
-                            SpotifyController.playTrack(plattenspieler?.user ?: return@post, update.id)
+                        if (plattenspieler == null) {
+                            call.respond(HttpStatusCode.Forbidden)
+                            return@post
                         }
-                        val updated = Plattenspieler(plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
-                            System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password)
+                        if (update.pause) {
+                            SpotifyController.pausePlayback(plattenspieler.user)
+                        } else {
+                            SpotifyController.playTrack(plattenspieler.user, update.id)
+                        }
+                        val updated = Plattenspieler(
+                            plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
+                            System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password
+                        )
                         Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, updated)
 
                         call.respond(HttpStatusCode.Accepted)
@@ -264,15 +284,18 @@ fun Application.configureRouting() {
                         val text = Files.readString(Path.of(Config.PATH_TO_PLATTENSPIELER_SCRIPT), Charsets.UTF_8)
                         call.respond(Config.PLATTENSPIELER_SCRIPT_VERSION + "/=====/" + text)
 
-                        val updated = Plattenspieler(plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
-                            System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password)
+                        val updated = Plattenspieler(
+                            plattenspieler.pid, plattenspieler.secret, plattenspieler.user,
+                            System.currentTimeMillis(), plattenspieler.ssid, plattenspieler.password
+                        )
                         Repositories.plattenspieler.updateOne(Plattenspieler::pid eq plattenspieler.pid, updated)
                     }
 
                     post("/ssid") {
                         logger.info("Requested /plattenspieler/ssid")
                         val request = call.receive<PlattenspielerAuthRequest>()
-                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
+                        val plattenspieler =
+                            Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
 
                         call.respond(plattenspieler.ssid ?: "")
                     }
@@ -280,9 +303,21 @@ fun Application.configureRouting() {
                     post("/password") {
                         logger.info("Requested /plattenspieler/password")
                         val request = call.receive<PlattenspielerAuthRequest>()
-                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
+                        val plattenspieler =
+                            Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth) ?: return@post
 
                         call.respond(plattenspieler.password ?: "")
+                    }
+
+                    post("/data") {
+                        logger.info("Requested /plattenspieler/data")
+                        val request = call.receive<PlattenspielerAuthRequest>()
+                        val plattenspieler = Repositories.plattenspieler.findOne(Plattenspieler::secret eq request.auth)
+                        if (plattenspieler == null) {
+                            call.respondText("", status = HttpStatusCode.Forbidden)
+                            return@post
+                        }
+                        call.respond("{\"ssid\":\"" + plattenspieler.ssid + "\",\"password\":\"" + plattenspieler.password + "\"}")
                     }
                 }
             }
@@ -314,6 +349,20 @@ fun Application.configureRouting() {
     }
 }
 
+suspend fun ApplicationCall.getUser(): User? {
+    val name = principal<JWTPrincipal>()?.get("user")
+    if (name == null) {
+        respond(HttpStatusCode.Forbidden)
+        return null
+    }
+    val user = Repositories.users.findOne(User::userid eq name)
+    if (user == null) {
+        respond(HttpStatusCode.Forbidden)
+        return null
+    }
+    return user
+}
+
 @Serializable
 data class AuthenticationRequest(val user: String, val password: String)
 
@@ -336,7 +385,13 @@ data class DevicesResponse(val devices: List<DeviceR>, val selected: String)
 data class DeviceR(val name: String, val id: String, val type: String)
 
 @Serializable
-data class UserResponse(val name: String, val picture: String, val spotify: Boolean, val admin: Boolean, val device: String)
+data class UserResponse(
+    val name: String,
+    val picture: String,
+    val spotify: Boolean,
+    val admin: Boolean,
+    val device: String
+)
 
 @Serializable
 data class CreateAccountRequest(val name: String, val password: String, val code: String)

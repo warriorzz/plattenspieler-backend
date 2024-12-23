@@ -54,7 +54,7 @@ object SpotifyController {
         if (user != null && createMap.contains(user.userid) && recordId != null) {
             val found = Repositories.records.findOne(Record::chipId eq recordId)
             val track = createMap[user.userid]!!
-            val record = Record(recordId, track.id, track.album?.images[0]?.url)
+            val record = Record(recordId, track.id, user.userid, track.album?.images[0]?.url, track.name)
             if (found != null) {
                 Repositories.records.updateOne(Record::chipId eq recordId, record)
             } else {
