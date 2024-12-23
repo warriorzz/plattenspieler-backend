@@ -21,7 +21,10 @@ import org.litote.kmongo.eq
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
+@OptIn(ExperimentalEncodingApi::class)
 fun Application.configureRouting() {
     logger.info("Configuring routing...")
 
@@ -317,7 +320,10 @@ fun Application.configureRouting() {
                             call.respondText("", status = HttpStatusCode.Forbidden)
                             return@post
                         }
-                        call.respond("{\"ssid\":\"" + plattenspieler.ssid + "\",\"password\":\"" + plattenspieler.password + "\"}")
+                        if (plattenspieler.ssid == null || plattenspieler.password == null)
+                            call.respond("")
+                        else
+                            call.respond("{\"ssid\":\"" + Base64.Default.encode(plattenspieler.ssid.toByteArray()) + "\",\"password\":\"" + Base64.Default.encode(plattenspieler.password.toByteArray()) + "\"}")
                     }
                 }
             }
