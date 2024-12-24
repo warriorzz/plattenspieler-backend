@@ -29,7 +29,7 @@ data class User(
     val name: String,
     val password: ByteArray,
     val picture: String? = null,
-    val isAdmin: Boolean = true,
+    val isAdmin: Boolean = false,
     var ktify: ClientCredentials? = null,
     val deviceId: String? = null
 )
